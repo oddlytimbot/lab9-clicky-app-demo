@@ -1,0 +1,492 @@
+const styled = styled.default;
+
+//firebase configuration
+var config = {
+  apiKey: "AIzaSyBS5EkB1pPo3i8c_0xN6NZW6kRHHf5ET8U",
+  authDomain: "inm220test.firebaseapp.com",
+  databaseURL: "https://inm220test.firebaseio.com",
+  storageBucket: "inm220test.appspot.com",
+  messagingSenderId: "913626275002"
+};
+firebase.initializeApp(config);
+
+//enforce accessibility
+const PRIMARYCOLOR = {
+  COLOR: '#ffab40',
+  OFFLINECOLOR: 'red',
+  TEXTCOLOR: '#000000',
+  TEXTALPHAMIN:'.59',
+  TEXTALPHAMAX:'1'
+};
+const HEADING = {
+  VSPACE: '10'
+}
+const SPACEONE = '.5';
+
+const Row = styled.div`
+  padding: 0 ${props => props.space ? props.space : '0'};
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  justify-content: ${props => props.rowJustify ? props.rowJustify: "center"};
+
+  @media (max-width: 700px) {
+		flex-direction: ${props => props.stack ? 'column' : 'row'};
+	}
+`
+
+const Column = styled.div`
+  padding: ${props => props.space ? props.space : '0'} 0;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+`
+
+const Container = Column.extend`
+  justify-content: center;
+  width:100%;
+  align-items: center;
+`
+const Paper = Column.extend`
+  box-shadow:  0 1px 3px 0 rgba(0,0,0,.2), 0 1px 1px 0 rgba(0,0,0,.14), 0 2px 1px -1px rgba(0,0,0,.12);
+  justify-content: center;
+  align-items: center;
+  margin: 20px;
+  padding: ${props => props.paperPadding ? props.paperPadding: "20px"};
+  margin-top: 50px;
+`
+const MenuBar = styled.section`
+  background: ${props => props.connected ? PRIMARYCOLOR.COLOR : PRIMARYCOLOR.OFFLINECOLOR };
+  width: 100%;
+`
+const FlexSpan = styled.span`
+  flex:2;
+`
+const H4=styled.h4`
+  padding: ${HEADING.VSPACE}px 0px;
+`
+const H5=styled.h5`
+  padding: ${HEADING.VSPACE}px 0px;
+`
+
+const HeroHeader = styled.div`
+  height: 200px;
+  width: 100%;
+  background-image: url(${props => props.background ? props.background: "none"});
+  background-position: center;
+  background-size: cover;
+display: flex;
+justify-content: center;
+align-items: center;
+@media (max-width: 500px) {
+  background-image: none;
+}
+`
+
+const HeaderText = styled.h2`
+  color: ${props => props.headerTextColour ? props.headerTextColour: "white"};
+  text-align: center;
+  width: ${props => props.headerTextWidth ? props.headerTextwidth: "30%"};
+@media (max-width: 500px) {
+  color: #000;
+  width: 70%;
+}
+`
+
+const Button=styled.button`
+  width: 95%;
+  max-width: 120px;
+  border: none;
+  padding: 8px;
+  border-radius: 2px; 
+  background: ${PRIMARYCOLOR.COLOR};
+  color: white;
+  text-transform: uppercase;
+  font-size: 14px;
+  outline: none;
+  cursor: pointer;
+  
+  :hover {
+    background-color: gold;
+  }
+`
+const MenuIcon = styled.a`
+  color: ${PRIMARYCOLOR.TEXTCOLOR};
+  opacity: ${PRIMARYCOLOR.TEXTALPHAMIN};
+  padding: ${SPACEONE}em;
+  cursor: pointer;
+  &:hover {
+    opacity: ${PRIMARYCOLOR.TEXTALPHAMAX};
+	}
+`
+
+const MenuText = styled.h4`
+  padding: 12px;
+  font-weight: 500;
+`
+
+const Form = styled.form`
+display: flex;
+flex-direction: column;
+width: 300px;
+`
+const SubmitButton = styled.input`
+width: 46%;
+max-width: 100px;
+background: #efefef;
+border: none;
+padding: 8px;
+border-radius: 2px; 
+color: ${PRIMARYCOLOR.TEXTCOLOR};
+text-transform: uppercase;
+font-size: 12px;
+outline: none;
+cursor: pointer;
+  
+  :hover {
+    background-color: ${PRIMARYCOLOR.COLOR};
+    color: white;
+  }
+`
+const InputField = styled.input`
+width: 90%;
+margin-bottom: 1em;
+border: none;
+border-bottom: 1px solid #d2d0d0;
+
+:focus{
+  border: none;
+  outline: none;
+  border-bottom: 2px solid ${PRIMARYCOLOR.COLOR};
+}
+`
+const TextAreaField = styled.textarea`
+width: 100%;
+`
+const FormLabel = styled.h4`
+margin-top: 10px;
+text-align: left;
+padding: 15px;
+`
+//is localstorage available in this browser?
+//pass 'localStorage' to test this in current browser
+const storageAvailable = (type)=>{
+    try {
+        const storage = window[type],
+            x = '__storage_test__';
+      //try putting an item in storage and removing it. Some older browsers
+      //have a localStorage object, but the API is not implemented
+        storage.setItem(x, x);
+        storage.removeItem(x);
+        return true;
+    } catch(e) {
+      //use instanceof to cast the error to DOMException so we can get the
+      //error code (different in firefox)
+      //it is possible for localStorage to become full!
+        return e instanceof DOMException && (
+            // everything except Firefox
+            e.code === 22 ||
+            // Firefox
+            e.code === 1014 ||
+            // test name field too, because code might not be present
+            // everything except Firefox
+            e.name === 'QuotaExceededError' ||
+            // Firefox
+            e.name === 'NS_ERROR_DOM_QUOTA_REACHED') &&
+            // acknowledge QuotaExceededError only if there's somethinicicong already stored
+            storage.length !== 0;
+    }
+}
+
+//sync these with firebase database
+//these two functions are on the global scope, probably best to move them
+const coffeesFromStorage = () =>{
+  if(storageAvailable('localStorage')){
+     //look in storage for coffees
+     const total = window.localStorage.getItem('total')
+      return total || 0;
+     }else{
+       //storage is not available
+       return "0";
+     }
+}
+const putCoffeeInStorage = (amt=1)=>{
+  if(storageAvailable('localStorage')){
+    const total = Number(window.localStorage.getItem('total')) || 0;
+    const newTotal = amt>1 ? amt : total + amt;
+    window.localStorage.setItem('total', newTotal);
+  }else{
+    alert("Local storage not available.")
+  }
+}
+
+const ProxiedButton = props =>{
+  const drink = (evt) =>{
+    
+    props.action();//state hoist yo!
+  }
+  return(
+    <Button onClick={drink}>{props.label}</Button>
+  )
+}
+
+class AuthState extends React.Component{
+  constructor(props){
+    super(props);
+    this.state={
+      userRegistered: false,
+      userLoggedIn: false
+    }
+  }
+  componentWillMount(){
+    this.initAuthentication();
+  }
+  //listens for changes in authentication state
+  initAuthentication(){
+    firebase.auth().onAuthStateChanged(
+      user=>{
+        if(user){
+          console.log("Person is authenticated");
+          this.setState({
+            userRegistered: true,
+            userLoggedIn: true
+          })
+        }else{
+          console.log("Person is NOT authenticated");
+          this.setState({
+            userRegistered: false,
+            userLoggedIn: false
+          })
+        }
+      }
+    )
+  }
+  signOut(){
+    console.log("Log out from firebase");
+    return firebase.auth().signOut();
+  }
+  createUserWithEmailAndPassword({email, password}){
+    return firebase.auth().createUserWithEmailAndPassword(email, password);
+  }
+  signInWithEmailAndPassword({email, password}){
+    return firebase.auth().signInWithEmailAndPassword(email, password);
+  }
+  renderChildren(children){
+    return React.Children.map(children, child => {
+      //don't render children that require auth if user is not authenticated
+      if(child.props.authenticationRequired && !this.state.userLoggedIn){
+        return <div>
+          <Settings authenticated={this.state.userLoggedIn} signOut={this.signOut.bind(this)} logIn={this.signInWithEmailAndPassword.bind(this)} register={this.createUserWithEmailAndPassword.bind(this)} />
+        </div>;
+      }
+      //create a clone of the child
+      const cloned = React.cloneElement(child, {
+        authenticated: this.state.userLoggedIn,
+        signOut: this.signOut.bind(this)
+      })
+      //wrapped, cloned item is returned
+      return cloned
+    })
+  }
+  
+  //change the render so it injects props for authentication status into all children
+  render(){
+    return(
+    <div>
+      {this.renderChildren(this.props.children)}
+    </div>
+    )
+  }
+}
+
+const AuthenticatedProvider = props =>{
+  return(
+    <AuthState>
+      <CoffeeState authenticationRequired />
+    </AuthState>
+  )
+}
+
+class Settings extends React.Component{
+  constructor(props){
+    super(props);
+    this.state={
+      email:"",
+      password:""
+    }
+  }
+  onChange(evt){
+    this.setState({[evt.target.name]:evt.target.value});
+  }
+  onSubmit(evt){
+    evt.preventDefault();
+    //for better validation, see advanced example
+    if(this.state.email && this.state.password){
+      switch(evt.target.value){
+        case "Log In":
+          this.props.logIn(this.state).then(()=>{
+            console.log("login success");
+          }).catch((err)=>{
+            alert(err.message)
+          })
+        break;
+        case "Register":
+          this.props.register(this.state).then(()=>{
+            console.log("register success")
+          }).catch((err)=>{
+            alert(err.message)
+          })
+        break;
+       }
+    }
+  }
+  render(){
+    return(
+      <div>
+        {this.props.authenticated ? <LogoutForm action={this.props.signOut} /> : <LoginForm onSubmit={this.onSubmit.bind(this)} onChange={this.onChange.bind(this)} email={this.state.email} password={this.state.password} />}
+      </div>
+    )
+  }
+}
+const LoginForm = props =>{
+  return (
+    <Container>
+      <HeroHeader>
+        <HeaderText headerTextColour="black" headerTextWidth="70%">You count on coffee. We count your coffee. </HeaderText>
+      </HeroHeader>
+      
+      <Paper paperPadding="0px">
+        <MenuBar connected>
+          <MenuText>Log in or Register</MenuText>
+        </MenuBar>
+        <div className="info">
+      <Form>
+        <label>
+          <FormLabel>Email:</FormLabel>
+          <InputField onChange={props.onChange} name="email" type="text" value={props.email} />
+        </label>
+        <label>
+          <FormLabel>Password:</FormLabel>
+          <InputField onChange={props.onChange} name="password" type="password" value={props.password} />
+        </label>
+        <Row rowJustify="space-around">
+          <SubmitButton type="submit" value="Log In" onClick={props.onSubmit} />
+          <SubmitButton type="submit" value="Register" onClick={props.onSubmit} />
+        </Row>
+      </Form>
+        </div>
+      </Paper>
+    </Container>
+    )
+}
+const LogoutForm = props =>{
+  return (
+    <button onClick={props.action}>Log Out</button>
+  )
+}
+class CoffeeState extends React.Component{
+  constructor(props){
+    super(props);
+    this.state={
+      total: coffeesFromStorage()
+    }
+    
+    this.moreCoffee = this.moreCoffee.bind(this);
+    
+  }
+  
+  
+  componentDidMount(){
+    this.loadData();
+  }
+  
+  loadData(){
+    var connectedRef = firebase.database().ref('.info/connected');
+    connectedRef.on("value", (snap)=> {
+      if (snap.val() === true) {
+        console.log("connected")
+        this.setState({connected:true})
+      } else {
+        this.setState({connected:false})
+      }
+    });
+    //'value' events will only fire if the person is online and can connect to database
+    //when such an event happens, this function syncs the localstore to database
+    firebase.database().ref('coffees').on('value', snapshot =>{
+      const dbTotal = snapshot.val() ? snapshot.val().total : 0 ;//could be null if no coffees tracked
+      const localTotal = coffeesFromStorage();
+      
+      if(dbTotal>localTotal){
+        console.log("Update local store")
+        putCoffeeInStorage(dbTotal);
+        this.setState({total: dbTotal});
+      } else if(localTotal>dbTotal) {
+        firebase.database().ref('coffees').set({total: localTotal});
+      } else if(localTotal == dbTotal) {
+        console.log("Synced to database! "+localTotal)
+      }
+      //set state?
+    })
+  }
+  //default params yo!
+  moreCoffee(amt=1){
+    putCoffeeInStorage();//there aren't really events for localStorage success/fail
+    //immutable state yo!
+    let tempState = Object.assign({}, this.state);
+    //switch to update database?
+    tempState.total = Number(tempState.total)+amt;
+    this.setState(
+      tempState
+    )
+  }
+  render(){
+    return(
+      <UI total={this.state.total} action={this.moreCoffee} connected={this.state.connected} signOut={this.props.signOut} />
+    )
+  }
+}
+const UI = props =>{
+  return(
+    <Container>
+      <MenuBar connected={props.connected}>
+          <Row>
+          <MenuIcon><i className="material-icons">menu</i></MenuIcon>
+          <FlexSpan />
+          <MenuIcon><i className="material-icons">alarm</i></MenuIcon>
+            <ProxiedButton action={props.signOut} label="Logout" />
+          </Row>
+        </MenuBar>
+      <HeroHeader background="https://www.healthline.com/hlcmsresource/images/News/091316_coffeems_BODY.jpg">
+        <HeaderText>So you think you might have a coffee addiction?</HeaderText>
+      </HeroHeader>
+      <Paper>
+        
+        <div>
+          <Row>
+            <span className="icon-coffee"></span>
+          </Row>
+          <Column>
+          
+          <Row>
+            <Column>
+              <p>Let's track some numbers and find out</p>
+            </Column>
+          </Row>
+          <Row>
+            <H5>Total Coffees:{props.total}</H5>
+          </Row>
+          <Row>
+            <ProxiedButton action={props.action} label="Drink" />
+          </Row>
+          <Row>
+            
+          </Row>
+        </Column>
+      </div>
+      
+      </Paper>
+    </Container>
+  )
+}
+
+ReactDOM.render(<AuthenticatedProvider />, document.querySelector('#exampleOne'));
