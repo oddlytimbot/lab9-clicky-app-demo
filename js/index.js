@@ -496,7 +496,7 @@ var UI = function UI(props) {
       React.createElement(
         HeaderText,
         null,
-        "So you think you might have a coffee addiction?"
+        "So you think you might have a coffee craving?"
       )
     ),
     React.createElement(
